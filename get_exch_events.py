@@ -22,7 +22,6 @@ import sys
 import string
 import time
  
- 
 def InsertSingleEvent(calendar_service, title, content, where, start_time=None, end_time=None):
 	event = gdata.calendar.CalendarEventEntry()
 	event.title = atom.Title(text=title)
