@@ -12,7 +12,7 @@ function setup() {
 
 function set_timeOffset(timeOffset){
 	server.setpermanentvalues({timeOffset = timeOffset});
-	nv.timeOffset <- {timeOffset = timeOffset}
+	nv <- {timeOffset = timeOffset}
 }
 
 function set_twelve_hour(isTwelveHour){
@@ -35,7 +35,31 @@ function tz_adjusted_time(){
 		//this step converts -2 back to 22
 		//this really doesn't matter as much as we might suppose; timezone adjusted time is only used for user-level-display
 	}
-	day, hour, min
+	return {'day
+	'day':day, 'hour': hour, 'min': min}
+}
+
+function adjust_twelveHour(date){
+	if (date.hour >= 12){
+		date.isPM <- true;
+		date.hour = date.hour - 12;
+	}
+	else{
+		date.isPM <- false;
+	}
+	if (date.hour == 0){
+		date.hour = 12;
+		//so it is 12:01am in the morning, not 0:01am
+	}
+	return date;
+}
+
+function get_time(){
+	time = tz_adjusted_time();
+	if(server.permanent.timeOffset){
+		time = adjust_twelveHour(time);
+	}
+	return time;
 }
 
 
@@ -43,19 +67,20 @@ class serialDisplay{
 	constructor(){
 		hardware.uart57.write(0x76); //init
 	}
-	function writeTime(hour, min){
-		if (hour <10){
+	function writeTime(){
+		time = get_time();
+		if (time.hour <10){
 			hardware.uart57.write(0x79); // Send the Move Cursor Command
 			hardware.uart57.write(0x01); // Send the data byte, with value 1
 			// now Write hour, should be displayed on 2nd digit
 		}
-		hardware.uart57.write(hour);
-		if (min < 10){
+		hardware.uart57.write(time.hour);
+		if (time.min < 10){
 			hardware.uart.write(0x79);
 			hardware.uart.write(0x03); //move the cursor to the third digit
 			//minute will be displayed on the fourth digit now
 		}
-		hardware.uart57.write(min);
+		hardware.uart57.write(time.min);
 	}
 }
 
