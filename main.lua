@@ -8,6 +8,7 @@ function setup() {
     server.log("Hello, World! "+ hardware.getimpeeid() + " reporting in.");
 	agent.on("set_tz", set_timeOffset);
 	agent.on("set_twelve", set_twelve_hour);
+	nv <- {displayTime = true}; //time should always be displayed while starting
 }
 
 function set_timeOffset(timeOffset){
@@ -55,20 +56,36 @@ function adjust_twelveHour(date){
 }
 
 function get_time(){
-	time = tz_adjusted_time();
-	if(server.permanent.timeOffset){
+	local time = tz_adjusted_time();
+	if(server.permanent.isTwelveHour){
 		time = adjust_twelveHour(time);
 	}
 	return time;
 }
 
+function checkInNV(name){
+	if ("nv" in getroottable()) && (name in nv)){
+		return true;
+	}
+	return false;
+}
+
+function displayWrite(){
+	local time = get_time();
+	writeTime(time);
+	if (checkInNV("displayTime"){
+		imp.wakeup(0.4, displayWrite);
+	}
+}
+	
 
 class serialDisplay{
 	constructor(){
 		hardware.uart57.write(0x76); //init
 	}
-	function writeTime(){
-		time = get_time();
+	function writeTime(time){
+			hardware.uart57.write(0x79); // Send the Move Cursor Command
+			hardware.uart57.write(0x00); // Send the data byte, with value 0 (reset the cursor area)
 		if (time.hour <10){
 			hardware.uart57.write(0x79); // Send the Move Cursor Command
 			hardware.uart57.write(0x01); // Send the data byte, with value 1
@@ -76,9 +93,7 @@ class serialDisplay{
 		}
 		hardware.uart57.write(time.hour);
 		if (time.min < 10){
-			hardware.uart.write(0x79);
-			hardware.uart.write(0x03); //move the cursor to the third digit
-			//minute will be displayed on the fourth digit now
+			hardware.uart.write(0); //place a blank 0 here
 		}
 		hardware.uart57.write(time.min);
 	}
